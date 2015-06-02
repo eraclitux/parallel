@@ -7,9 +7,7 @@ package goparallel_test
 import (
 	"fmt"
 	"math"
-	"os"
 	"runtime"
-	"time"
 
 	"github.com/eraclitux/goparallel"
 )
@@ -43,17 +41,13 @@ func isPrime(n uint64) bool {
 	return true
 }
 
-// FIXME remove time comparison here and use testing's test/benchmark.
-
 // Example shows example usage of the package.
-// It compares time consuption using single core.
 func Example() {
 	// Creates the slice of tasks that we want to execute in parallel.
 	tasks := make([]goparallel.Tasker, 0, 1e3)
 	prev := 1
 	// Limit is the bigger number to check.
 	var limit int = 1e5
-	pre := time.Now()
 	// Create as much tasks as number of cores.
 	d := limit / runtime.NumCPU()
 	for i := 1; i < limit; i++ {
@@ -73,28 +67,11 @@ func Example() {
 	tasks = append(tasks, goparallel.Tasker(j))
 
 	// Run tasks in parallel using all cores.
-	goparallel.RunBlocking(tasks)
-
-	after := time.Now()
-	Δt1 := after.Sub(pre)
-
-	// Lets compare execution time using single core.
-	pre = time.Now()
-	results := make(map[int]bool)
-	for i := 1; i <= limit; i++ {
-		results[i] = isPrime(uint64(i))
+	err := goparallel.RunBlocking(tasks)
+	if err == nil {
+		fmt.Println("Example ok")
 	}
-	after = time.Now()
-	Δt2 := after.Sub(pre)
-	if Δt2 > Δt1 {
-		fmt.Println("Using goparallel takes less time.")
-	} else {
-		fmt.Println("Using goparallel takes more time.")
-	}
-	// We use stderr as stdout is checked to pass test.
-	fmt.Fprintf(os.Stderr, "%30s %9dns\n", "Time with goworker:", Δt1)
-	fmt.Fprintf(os.Stderr, "%30s %9dns\n", "Time without goworker:", Δt2)
 
 	// Output:
-	// Using goparallel takes less time.
+	// Example ok
 }
