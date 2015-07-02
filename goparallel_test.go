@@ -63,12 +63,11 @@ func TestRunBlocking(t *testing.T) {
 
 	err := RunBlocking(tasks)
 	if err != nil {
-		t.Errorf("Test has failed")
+		t.Fatal("Test has failed")
 	}
 	for _, e := range tasks {
 		if !e.(*dummy).done {
-			fmt.Println("Error executig task")
-			t.FailNow()
+			t.Fatal("Error executig task")
 		}
 	}
 }
@@ -84,12 +83,11 @@ func TestRunBlocking_nopointer(t *testing.T) {
 
 	err := RunBlocking(tasks)
 	if err != nil {
-		t.Errorf("Test has failed")
+		t.Fatal("Test has failed")
 	}
 	for _, e := range tasks {
 		if e.(*dummyNop).done {
-			fmt.Println("Error, receiver modified!")
-			t.FailNow()
+			t.Fatal("Error, receiver modified!")
 		}
 	}
 }

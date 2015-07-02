@@ -7,6 +7,7 @@
 // Number of workers are adjusted at runtime in base of numbers of cores.
 // This paradigm is particulary uselfull in presence of heavy,
 // indipended tasks.
+// Usefull for debugging on Linux: pidstat -tu  -C '<pid-name>'  1
 package goparallel
 
 import "runtime"
@@ -51,9 +52,6 @@ func init() {
 	// TODO Timeout a public accessible time out setting.
 }
 
-// TODO has a non blocking version a sense (API semplification, performance etc.)? Es:
-// RunNonBlocking(jobs <-chan Tasker, results chan<- Tasker) {}
-
 // RunBlocking starts the goroutines that will execute Taskers.
 // It is intended to run blocking in the main goroutine.
 // []T does not convert to []Tasker implicitly even is T implements
@@ -67,10 +65,10 @@ func RunBlocking(jobs []Tasker) error {
 	go parallelizeWorkers(jobsQueue, doneChan)
 	for {
 		select {
+		// TODO case timeout, returns error.
 		case <-doneChan:
 			totalDone++
 		}
-		// TODO case timeout, returns error.
 		if totalDone == workersNumber {
 			// We can assume that jobsQueue is closed and
 			// that no goroutine is operating on []Tasker.
@@ -79,3 +77,13 @@ func RunBlocking(jobs []Tasker) error {
 	}
 	return nil
 }
+
+// TODO has a non blocking version a sense (API semplification, performance etc.)? Es:
+// When using RunBlocking one must wait that all tasks are done
+// and put separate results togherther in the end. RunNonBlocking avoids that.
+// func RunNonBlocking(jobs <-chan Tasker) (results chan<- Resulter) {
+//code
+//code
+// Comunicate to callers that we are done.
+// close(results)
+//}
