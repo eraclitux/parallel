@@ -6,6 +6,7 @@ package goparallel
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"os"
 	"runtime"
@@ -63,7 +64,7 @@ func TestRunBlocking(t *testing.T) {
 
 	err := RunBlocking(tasks)
 	if err != nil {
-		t.Fatal("Test has failed")
+		t.Fatal("Test has failed", err)
 	}
 	for _, e := range tasks {
 		if !e.(*dummy).done {
@@ -83,7 +84,7 @@ func TestRunBlocking_nopointer(t *testing.T) {
 
 	err := RunBlocking(tasks)
 	if err != nil {
-		t.Fatal("Test has failed")
+		t.Fatal("Test has failed", err)
 	}
 	for _, e := range tasks {
 		if e.(*dummyNop).done {
@@ -111,7 +112,7 @@ func Example_performance() {
 	tasks := make([]Tasker, 0, 1e3)
 	prev := 1
 	// Limit is the bigger number to check.
-	var limit int = 1e5
+	var limit int = 1e6
 	pre := time.Now()
 	// Create as much tasks as number of cores.
 	d := limit / runtime.NumCPU()
@@ -132,7 +133,10 @@ func Example_performance() {
 	tasks = append(tasks, Tasker(j))
 
 	// Run tasks in parallel using all cores.
-	RunBlocking(tasks)
+	err := RunBlocking(tasks)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	after := time.Now()
 	Δt1 := after.Sub(pre)

@@ -1,16 +1,22 @@
-// Copyright (c) 2014 Andrea Masi. All rights reserved.
+// Copyright (c) 2015 Andrea Masi. All rights reserved.
 // Use of this source code is governed by a MIT license
 // that can be found in the LICENSE.txt file.
 
-// Package goparallel simplifies & standardizes use of parallel
+// Package goparallel simplifies use of parallel
 // (as not concurrent) workers that run on their own core.
-// Number of workers are adjusted at runtime in base of numbers of cores.
+// Number of workers is adjusted at runtime in base of numbers of cores.
 // This paradigm is particulary uselfull in presence of heavy,
 // indipended tasks.
+//
 // Usefull for debugging on Linux: pidstat -tu  -C '<pid-name>'  1
 package goparallel
 
-import "runtime"
+import (
+	"errors"
+	"os"
+	"os/signal"
+	"runtime"
+)
 
 // Tasker interface models an heavy task that have to be
 // executed from a worker.
@@ -18,13 +24,28 @@ type Tasker interface {
 	Execute()
 }
 
+// ErrTasksNotCompleted says that not all tasks where completed.
+var ErrTasksNotCompleted = errors.New("SIGINT received, not all tasks have been completed")
+
 var workersNumber = runtime.NumCPU()
 var jobsQueue chan Tasker
 var doneChan chan struct{}
 
-func populateQueue(jobsQueue chan<- Tasker, jobs []Tasker) {
+func populateQueue(jobsQueue chan<- Tasker, prematureEnd chan<- struct{}, jobs []Tasker) {
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
 	for _, t := range jobs {
-		jobsQueue <- t
+		select {
+		case <-signalChan:
+			// Abort jobs queue evaluation.
+			// Taskers already sended will be finished
+			// and an error will be returned.
+			prematureEnd <- struct{}{}
+			close(jobsQueue)
+			return
+		default:
+			jobsQueue <- t
+		}
 	}
 	close(jobsQueue)
 }
@@ -57,17 +78,20 @@ func init() {
 // []T does not convert to []Tasker implicitly even is T implements
 // Tasker. We need to iterate on []Tasker making an explicit cast.
 // http://golang.org/doc/faq#convert_slice_of_interface
-func RunBlocking(jobs []Tasker) error {
+func RunBlocking(jobs []Tasker) (err error) {
+	prematureEnd := make(chan struct{})
 	jobsQueue := make(chan Tasker, workersNumber)
 	doneChan := make(chan struct{}, workersNumber)
 	var totalDone int
-	go populateQueue(jobsQueue, jobs)
+	go populateQueue(jobsQueue, prematureEnd, jobs)
 	go parallelizeWorkers(jobsQueue, doneChan)
 	for {
 		select {
 		// TODO case timeout, returns error.
 		case <-doneChan:
 			totalDone++
+		case <-prematureEnd:
+			err = ErrTasksNotCompleted
 		}
 		if totalDone == workersNumber {
 			// We can assume that jobsQueue is closed and
@@ -75,7 +99,7 @@ func RunBlocking(jobs []Tasker) error {
 			break
 		}
 	}
-	return nil
+	return
 }
 
 // TODO has a non blocking version a sense (API semplification, performance etc.)? Es:
