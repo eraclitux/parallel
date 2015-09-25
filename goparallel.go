@@ -32,7 +32,10 @@ type Tasker interface {
 // ErrTasksNotCompleted says that not all tasks where completed.
 var ErrTasksNotCompleted = errors.New("SIGINT received, not all tasks have been completed")
 
-var workersNumber = runtime.NumCPU()
+// WorkersNumber can be used to change
+// default worker number which is set to
+// CPUs number.
+var WorkersNumber = runtime.NumCPU()
 var jobsQueue chan Tasker
 var doneChan chan struct{}
 
@@ -57,9 +60,10 @@ func populateQueue(jobsQueue chan<- Tasker, jobs []Tasker, prematureEnd chan<- s
 	close(jobsQueue)
 }
 
-// parallelizeWorkers create a goroutine for every worker.
+// parallelizeWorkers creates a goroutine for every worker
+// which will call Execute() method.
 func parallelizeWorkers(jobsQueue <-chan Tasker, doneChan chan<- struct{}) {
-	for i := 0; i < workersNumber; i++ {
+	for i := 0; i < WorkersNumber; i++ {
 		go evaluateQueue(jobsQueue, doneChan)
 	}
 }
@@ -76,7 +80,7 @@ func evaluateQueue(jobsQueue <-chan Tasker, doneChan chan<- struct{}) {
 func init() {
 	// Use all cores.
 	// FIXME default in 1.5?
-	runtime.GOMAXPROCS(workersNumber)
+	runtime.GOMAXPROCS(WorkersNumber)
 	// TODO Timeout a public accessible time out setting.
 }
 
@@ -86,9 +90,10 @@ func init() {
 // Tasker. We need to iterate on []Tasker making an explicit cast.
 // http://golang.org/doc/faq#convert_slice_of_interface
 func RunBlocking(jobs []Tasker) (err error) {
+	stracer.Traceln("WorkersNumber:", WorkersNumber)
 	prematureEnd := make(chan struct{})
-	jobsQueue := make(chan Tasker, workersNumber)
-	doneChan := make(chan struct{}, workersNumber)
+	jobsQueue := make(chan Tasker, WorkersNumber)
+	doneChan := make(chan struct{}, WorkersNumber)
 	var totalDone int
 	go populateQueue(jobsQueue, jobs, prematureEnd)
 	go parallelizeWorkers(jobsQueue, doneChan)
@@ -100,7 +105,7 @@ func RunBlocking(jobs []Tasker) (err error) {
 		case <-prematureEnd:
 			err = ErrTasksNotCompleted
 		}
-		if totalDone == workersNumber {
+		if totalDone == WorkersNumber {
 			// We can assume that jobsQueue is closed and
 			// that no goroutine is operating on []Tasker.
 			break
