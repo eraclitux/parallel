@@ -1,6 +1,6 @@
-==========
-GoParallel
-==========
+========
+parallel
+========
 
 |image0|_ |image1|_
 
