@@ -73,30 +73,6 @@ func TestRunBlocking(t *testing.T) {
 	}
 }
 
-// TestRunBlocking_WorkersNumber tests changing default
-// WorkersNumber.
-func TestRunBlocking_WorkersNumber(t *testing.T) {
-	tasks := make([]Tasker, 1e2)
-	// []*dummy does not convert []Tasker.
-	// We need to iterate on []Tasker making an explicit cast.
-	// http://golang.org/doc/faq#convert_slice_of_interface
-	for i := range tasks {
-		tasks[i] = Tasker(&dummy{false})
-	}
-
-	WorkersNumber = 8
-	err := RunBlocking(tasks)
-	if err != nil {
-		t.Fatal("Test has failed", err)
-	}
-	for _, e := range tasks {
-		if !e.(*dummy).done {
-			t.Fatal("Error executig task")
-		}
-	}
-	WorkersNumber = runtime.NumCPU()
-}
-
 // TestRunBlocking_nopointer shows that Execute() method
 // must be implemented on a pointer receiver or computed values
 // will be lost.
