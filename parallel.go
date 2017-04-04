@@ -74,13 +74,6 @@ func evaluateQueue(jobsQueue <-chan Tasker, doneChan chan<- struct{}) {
 	doneChan <- struct{}{}
 }
 
-func init() {
-	// Use all cores.
-	// FIXME default in 1.5?
-	runtime.GOMAXPROCS(WorkersNumber)
-	// TODO Timeout a public accessible time out setting.
-}
-
 // RunBlocking starts the goroutines that will execute Taskers.
 // It is intended to run blocking in the main goroutine.
 // []T does not convert to []Tasker implicitly even is T implements
