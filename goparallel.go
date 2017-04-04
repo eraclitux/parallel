@@ -20,7 +20,7 @@ import (
 	"os/signal"
 	"runtime"
 
-	"github.com/eraclitux/stracer"
+	"github.com/eraclitux/trace"
 )
 
 // Tasker interface models an heavy task that have to be
@@ -48,7 +48,7 @@ func populateQueue(jobsQueue chan<- Tasker, jobs []Tasker, prematureEnd chan<- s
 			// Abort jobs queue evaluation.
 			// Taskers already sended will be finished
 			// and an error will be returned.
-			stracer.Traceln("goparallel: received SIGINT")
+			trace.Traceln("goparallel: received SIGINT")
 			prematureEnd <- struct{}{}
 			close(jobsQueue)
 			return
@@ -56,7 +56,7 @@ func populateQueue(jobsQueue chan<- Tasker, jobs []Tasker, prematureEnd chan<- s
 			jobsQueue <- t
 		}
 	}
-	stracer.Traceln("close jobsQueue")
+	trace.Traceln("close jobsQueue")
 	close(jobsQueue)
 }
 
@@ -90,7 +90,7 @@ func init() {
 // Tasker. We need to iterate on []Tasker making an explicit cast.
 // http://golang.org/doc/faq#convert_slice_of_interface
 func RunBlocking(jobs []Tasker) (err error) {
-	stracer.Traceln("WorkersNumber:", WorkersNumber)
+	trace.Traceln("WorkersNumber:", WorkersNumber)
 	prematureEnd := make(chan struct{})
 	jobsQueue := make(chan Tasker, WorkersNumber)
 	doneChan := make(chan struct{}, WorkersNumber)
