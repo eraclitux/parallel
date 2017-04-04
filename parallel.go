@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT license
 // that can be found in the LICENSE.txt file.
 
-// Package goparallel simplifies use of parallel
+// Package parallel simplifies use of parallel
 // (as not concurrent) workers that run on their own core.
 // Number of workers is adjusted at runtime in base of numbers of cores.
 // This paradigm is particulary uselfull in presence of heavy,
@@ -10,7 +10,7 @@
 //
 // Go's high level functionalities are used to implement parallelism
 // with concurrency (channel, no locks).
-package goparallel
+package parallel
 
 // NOTE Usefull for debugging on Linux: pidstat -tu  -C '<pid-name>'  1
 
@@ -48,7 +48,7 @@ func populateQueue(jobsQueue chan<- Tasker, jobs []Tasker, prematureEnd chan<- s
 			// Abort jobs queue evaluation.
 			// Taskers already sended will be finished
 			// and an error will be returned.
-			trace.Traceln("goparallel: received SIGINT")
+			trace.Traceln("parallel: received SIGINT")
 			prematureEnd <- struct{}{}
 			close(jobsQueue)
 			return

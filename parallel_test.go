@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT license
 // that can be found in the LICENSE.txt file.
 
-package goparallel
+package parallel
 
 import (
 	"fmt"
@@ -130,7 +130,7 @@ func (j *job) Execute() {
 	}
 }
 
-// Example_performance verify that using goparallel is faster than a serial execution.
+// Example_performance verifies that using parallel is faster than a serial execution.
 func Example_performance() {
 	// Creates the slice of tasks that we want to execute in parallel.
 	tasks := make([]Tasker, 0, 1e3)
@@ -174,14 +174,14 @@ func Example_performance() {
 	after = time.Now()
 	Δt2 := after.Sub(pre)
 	if Δt2 > Δt1 {
-		fmt.Println("Using goparallel takes less time.")
+		fmt.Println("Using parallel takes less time.")
 	} else {
-		fmt.Println("Using goparallel takes more time.")
+		fmt.Println("Using parallel takes more time.")
 	}
 	// We use stderr as stdout is checked to pass test.
 	fmt.Fprintf(os.Stderr, "%30s %9dns\n", "Time with goworker:", Δt1)
 	fmt.Fprintf(os.Stderr, "%30s %9dns\n", "Time without goworker:", Δt2)
 
 	// Output:
-	// Using goparallel takes less time.
+	// Using parallel takes less time.
 }

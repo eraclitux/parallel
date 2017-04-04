@@ -2,14 +2,14 @@
 // Use of this source code is governed by a MIT license
 // that can be found in the LICENSE.txt file.
 
-package goparallel_test
+package parallel_test
 
 import (
 	"fmt"
 	"math"
 	"runtime"
 
-	"github.com/eraclitux/goparallel"
+	"github.com/eraclitux/parallel"
 )
 
 type job struct {
@@ -44,7 +44,7 @@ func isPrime(n uint64) bool {
 // Example shows example usage of the package.
 func Example() {
 	// Creates the slice of tasks that we want to execute in parallel.
-	tasks := make([]goparallel.Tasker, 0, 1e3)
+	tasks := make([]parallel.Tasker, 0, 1e3)
 	prev := 1
 	// Limit is the bigger number to check.
 	var limit int = 1e5
@@ -59,15 +59,15 @@ func Example() {
 		if (i % d) == 0 {
 			j := &job{start: prev, stop: i}
 			prev = i + 1
-			tasks = append(tasks, goparallel.Tasker(j))
+			tasks = append(tasks, parallel.Tasker(j))
 		}
 	}
 	// Do not forget last interval.
 	j := &job{start: prev, stop: limit}
-	tasks = append(tasks, goparallel.Tasker(j))
+	tasks = append(tasks, parallel.Tasker(j))
 
 	// Run tasks in parallel using all cores.
-	err := goparallel.RunBlocking(tasks)
+	err := parallel.RunBlocking(tasks)
 	if err == nil {
 		fmt.Println("Example ok")
 	}
