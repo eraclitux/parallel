@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sync"
 
 	"github.com/eraclitux/trace"
 )
@@ -80,7 +81,6 @@ func evaluateQueue(jobsQueue <-chan Tasker, doneChan chan<- struct{}) {
 // Tasker. We need to iterate on []Tasker making an explicit cast.
 // http://golang.org/doc/faq#convert_slice_of_interface
 func RunBlocking(jobs []Tasker) (err error) {
-	trace.Traceln("WorkersNumber:", workersNumber)
 	prematureEnd := make(chan struct{})
 	jobsQueue := make(chan Tasker, workersNumber)
 	doneChan := make(chan struct{}, workersNumber)
@@ -102,6 +102,20 @@ func RunBlocking(jobs []Tasker) (err error) {
 		}
 	}
 	return
+}
+
+func runBlockingSync(jobs []Tasker) (err error) {
+	var wg sync.WaitGroup
+	for _, j := range jobs {
+		j := j
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			j.Execute()
+		}()
+	}
+	wg.Wait()
+	return nil
 }
 
 // TODO has a non blocking version a sense (API semplification, performance etc.)? Es:

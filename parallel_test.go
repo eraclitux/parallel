@@ -53,23 +53,55 @@ func (d dummyNop) Execute() {
 	d.done = true
 }
 
-func TestRunBlocking(t *testing.T) {
-	tasks := make([]Tasker, 1e2)
+var testCases = make([]Tasker, 1e2)
+
+func initTests() {
 	// []*dummy does not convert []Tasker.
 	// We need to iterate on []Tasker making an explicit cast.
 	// http://golang.org/doc/faq#convert_slice_of_interface
-	for i := range tasks {
-		tasks[i] = Tasker(&dummy{false})
+	for i := range testCases {
+		testCases[i] = Tasker(&dummy{})
 	}
 
-	err := RunBlocking(tasks)
+}
+
+func TestRunBlocking(t *testing.T) {
+	initTests()
+	err := RunBlocking(testCases)
 	if err != nil {
 		t.Fatal("Test has failed", err)
 	}
-	for _, e := range tasks {
+	for _, e := range testCases {
 		if !e.(*dummy).done {
 			t.Fatal("Error executig task")
 		}
+	}
+}
+func TestRunBlockingSync(t *testing.T) {
+	initTests()
+	err := runBlockingSync(testCases)
+	if err != nil {
+		t.Fatal("Test has failed", err)
+	}
+	for _, e := range testCases {
+		if !e.(*dummy).done {
+			t.Fatal("Error executig task")
+		}
+	}
+}
+
+func BenchmarkChannels(b *testing.B) {
+	initTests()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		RunBlocking(testCases)
+	}
+}
+func BenchmarkSync(b *testing.B) {
+	initTests()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		runBlockingSync(testCases)
 	}
 }
 
@@ -79,15 +111,14 @@ func TestRunBlocking(t *testing.T) {
 func TestRunBlocking_nopointer(t *testing.T) {
 	tasks := make([]Tasker, 1e1)
 	for i := range tasks {
-		tasks[i] = Tasker(&dummyNop{false})
+		tasks[i] = Tasker(dummyNop{})
 	}
-
 	err := RunBlocking(tasks)
 	if err != nil {
 		t.Fatal("Test has failed", err)
 	}
 	for _, e := range tasks {
-		if e.(*dummyNop).done {
+		if e.(dummyNop).done {
 			t.Fatal("Error, receiver modified!")
 		}
 	}
