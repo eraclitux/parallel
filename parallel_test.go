@@ -5,10 +5,7 @@
 package parallel
 
 import (
-	"fmt"
-	"log"
 	"math"
-	"os"
 	"runtime"
 	"testing"
 	"time"
@@ -137,16 +134,17 @@ func (j *job) Execute() {
 	}
 }
 
-// Example_performance verifies that using parallel is faster than a serial execution.
-func Example_performance() {
-	// Creates the slice of tasks that we want to execute in parallel.
-	tasks := make([]Tasker, 0, 1e3)
+// Verify that using parallel is faster than a serial execution
+// considering also its setup time.
+func TestGain(t *testing.T) {
+	cores := runtime.NumCPU()
+	tasks := make([]Tasker, 0, cores)
 	prev := 1
-	// Limit is the bigger number to check.
+	// The bigger number to check.
 	var limit int = 1e6
 	pre := time.Now()
 	// Create as much tasks as number of cores.
-	d := limit / runtime.NumCPU()
+	d := limit / cores
 	for i := 1; i < limit; i++ {
 		// This is not the best way to disbrubute load
 		// as complexity is not the same in different
@@ -162,13 +160,11 @@ func Example_performance() {
 	// Do not forget last interval.
 	j := &job{start: prev, stop: limit}
 	tasks = append(tasks, Tasker(j))
-
 	// Run tasks in parallel using all cores.
 	err := RunBlocking(tasks)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
-
 	after := time.Now()
 	Δt1 := after.Sub(pre)
 
@@ -180,15 +176,9 @@ func Example_performance() {
 	}
 	after = time.Now()
 	Δt2 := after.Sub(pre)
-	if Δt2 > Δt1 {
-		fmt.Println("Using parallel takes less time.")
-	} else {
-		fmt.Println("Using parallel takes more time.")
+	if Δt2 < Δt1 {
+		t.Error("using parallel takes more time")
 	}
-	// We use stderr as stdout is checked to pass test.
-	fmt.Fprintf(os.Stderr, "%30s %9dns\n", "Time with goworker:", Δt1)
-	fmt.Fprintf(os.Stderr, "%30s %9dns\n", "Time without goworker:", Δt2)
-
-	// Output:
-	// Using parallel takes less time.
+	t.Logf("%30s %9dns\n", "time with goworker:", Δt1)
+	t.Logf("%30s %9dns\n", "time without goworker:", Δt2)
 }
