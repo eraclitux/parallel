@@ -62,9 +62,9 @@ func initTests() {
 
 }
 
-func TestRunBlocking(t *testing.T) {
+func TestRun(t *testing.T) {
 	initTests()
-	err := RunBlocking(testCases)
+	err := Run(testCases)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,15 +74,15 @@ func TestRunBlocking(t *testing.T) {
 		}
 	}
 }
-func TestRunBlockingSync(t *testing.T) {
+func TestRunSync(t *testing.T) {
 	initTests()
-	err := runBlockingSync(testCases)
+	err := runSync(testCases)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, e := range testCases {
 		if !e.(*dummy).done {
-			t.Error("error executig task")
+			t.Error("error executing task")
 		}
 	}
 }
@@ -91,26 +91,26 @@ func BenchmarkChannels(b *testing.B) {
 	initTests()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		RunBlocking(testCases)
+		Run(testCases)
 	}
 }
 func BenchmarkSync(b *testing.B) {
 	initTests()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		runBlockingSync(testCases)
+		runSync(testCases)
 	}
 }
 
-// TestRunBlocking_nopointer shows that Execute() method
+// TestRun_nopointer shows that Execute() method
 // must be implemented on a pointer receiver or computed values
 // will be lost.
-func TestRunBlocking_nopointer(t *testing.T) {
+func TestRun_nopointer(t *testing.T) {
 	tasks := make([]Tasker, 1e1)
 	for i := range tasks {
 		tasks[i] = Tasker(dummyNop{})
 	}
-	err := RunBlocking(tasks)
+	err := Run(tasks)
 	if err != nil {
 		t.Fatal("Test has failed", err)
 	}
@@ -161,7 +161,7 @@ func TestGain(t *testing.T) {
 	j := &job{start: prev, stop: limit}
 	tasks = append(tasks, Tasker(j))
 	// Run tasks in parallel using all cores.
-	err := RunBlocking(tasks)
+	err := Run(tasks)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,6 +179,9 @@ func TestGain(t *testing.T) {
 	if Δt2 < Δt1 {
 		t.Error("using parallel takes more time")
 	}
-	t.Logf("%30s %9dns\n", "time with goworker:", Δt1)
-	t.Logf("%30s %9dns\n", "time without goworker:", Δt2)
+	t.Logf("%30s %9dns\n", "time with \"parallel\":", Δt1)
+	t.Logf("%30s %9dns\n", "time without \"parallel\":", Δt2)
+	diff := Δt2 - Δt1
+	p := (100 * diff) / Δt2
+	t.Logf("gain: %9d%%\n", p)
 }

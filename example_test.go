@@ -68,7 +68,7 @@ func Example() {
 	tasks = append(tasks, parallel.Tasker(j))
 
 	// Run tasks in parallel using all cores.
-	err := parallel.RunBlocking(tasks)
+	err := parallel.Run(tasks)
 	if err == nil {
 		fmt.Println("Example OK")
 	}

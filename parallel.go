@@ -72,12 +72,12 @@ func evaluateQueue(jobsQueue <-chan Tasker, doneChan chan<- struct{}) {
 	doneChan <- struct{}{}
 }
 
-// RunBlocking starts the goroutines that will execute Taskers.
+// Run starts the goroutines that will execute Taskers.
 // It is intended to run blocking in the main goroutine.
-// []T does not convert to []Tasker implicitly even is T implements
-// Tasker. We need to iterate on []Tasker making an explicit cast.
-// http://golang.org/doc/faq#convert_slice_of_interface
-func RunBlocking(jobs []Tasker) (err error) {
+func Run(jobs []Tasker) (err error) {
+	// []T does not convert to []Tasker implicitly even is T implements
+	// Tasker. We need to iterate on []Tasker making an explicit cast.
+	// http://golang.org/doc/faq#convert_slice_of_interface
 	prematureEnd := make(chan struct{})
 	jobsQueue := make(chan Tasker, workersNumber)
 	doneChan := make(chan struct{}, workersNumber)
@@ -101,7 +101,7 @@ func RunBlocking(jobs []Tasker) (err error) {
 	return
 }
 
-func runBlockingSync(jobs []Tasker) (err error) {
+func runSync(jobs []Tasker) (err error) {
 	var wg sync.WaitGroup
 	for _, j := range jobs {
 		j := j
@@ -116,7 +116,7 @@ func runBlockingSync(jobs []Tasker) (err error) {
 }
 
 // TODO has a non blocking version a sense (API semplification, performance etc.)? Es:
-// When using RunBlocking one must wait that all tasks are done
+// When using Run one must wait that all tasks are done
 // and put separate results togherther in the end. RunNonBlocking avoids that.
 // func RunNonBlocking(jobs <-chan Tasker) (results chan<- Resulter) {
 //code
