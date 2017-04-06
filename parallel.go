@@ -5,14 +5,11 @@
 // Package parallel simplifies use of parallel
 // (as not concurrent) workers that run on their own core.
 // Number of workers is adjusted at runtime in base of numbers of cores.
-// This paradigm is particulary uselfull in presence of heavy,
-// indipended tasks.
-//
-// Go's high level functionalities are used to implement parallelism
-// with concurrency (channel, no locks).
+// This paradigm is particularly useful in presence of heavy,
+// independent tasks.
 package parallel
 
-// NOTE Usefull for debugging on Linux: pidstat -tu  -C '<pid-name>'  1
+// NOTE Useful for debugging on Linux: pidstat -tu  -C '<pid-name>'  1
 
 import (
 	"errors"

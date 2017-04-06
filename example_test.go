@@ -43,19 +43,20 @@ func isPrime(n uint64) bool {
 
 // Example shows example usage of the package.
 func Example() {
+	cores := runtime.NumCPU()
 	// Creates the slice of tasks that we want to execute in parallel.
-	tasks := make([]parallel.Tasker, 0, 1e3)
+	tasks := make([]parallel.Tasker, 0, cores)
 	prev := 1
-	// Limit is the bigger number to check.
+	// Bigger number to check.
 	var limit int = 1e5
 	// Create as much tasks as number of cores.
-	d := limit / runtime.NumCPU()
+	d := int(limit / cores)
 	for i := 1; i < limit; i++ {
-		// This is not the best way to disbrubute load
+		// This is not the best way to distribute load
 		// as complexity is not the same in different
 		// intervals (bigger numbers are more difficult to verify),
 		// so some cores remains idle sooner.
-		// We could increase efficency making different interval lenghts.
+		// We could increase efficiency making different interval lengths.
 		if (i % d) == 0 {
 			j := &job{start: prev, stop: i}
 			prev = i + 1
@@ -69,9 +70,9 @@ func Example() {
 	// Run tasks in parallel using all cores.
 	err := parallel.RunBlocking(tasks)
 	if err == nil {
-		fmt.Println("Example ok")
+		fmt.Println("Example OK")
 	}
 
 	// Output:
-	// Example ok
+	// Example OK
 }

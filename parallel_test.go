@@ -66,11 +66,11 @@ func TestRunBlocking(t *testing.T) {
 	initTests()
 	err := RunBlocking(testCases)
 	if err != nil {
-		t.Fatal("Test has failed", err)
+		t.Fatal(err)
 	}
 	for _, e := range testCases {
 		if !e.(*dummy).done {
-			t.Fatal("Error executig task")
+			t.Fatal("task not executed")
 		}
 	}
 }
@@ -78,11 +78,11 @@ func TestRunBlockingSync(t *testing.T) {
 	initTests()
 	err := runBlockingSync(testCases)
 	if err != nil {
-		t.Fatal("Test has failed", err)
+		t.Fatal(err)
 	}
 	for _, e := range testCases {
 		if !e.(*dummy).done {
-			t.Fatal("Error executig task")
+			t.Error("error executig task")
 		}
 	}
 }
@@ -135,22 +135,22 @@ func (j *job) Execute() {
 }
 
 // Verify that using parallel is faster than a serial execution
-// considering also its setup time.
+// considering also setup time.
 func TestGain(t *testing.T) {
 	cores := runtime.NumCPU()
 	tasks := make([]Tasker, 0, cores)
 	prev := 1
-	// The bigger number to check.
+	// Bigger number to check.
 	var limit int = 1e6
 	pre := time.Now()
 	// Create as much tasks as number of cores.
-	d := limit / cores
+	d := int(limit / cores)
 	for i := 1; i < limit; i++ {
-		// This is not the best way to disbrubute load
+		// This is not the best way to distribute load
 		// as complexity is not the same in different
 		// intervals (bigger numbers are more difficult to verify),
 		// so some cores remains idle sooner.
-		// We could increase efficency making different interval lenghts.
+		// We could increase efficiency making different interval lengths.
 		if (i % d) == 0 {
 			j := &job{start: prev, stop: i}
 			prev = i + 1
