@@ -31,27 +31,54 @@ type Tasker interface {
 var ErrTasksNotCompleted = errors.New("SIGINT received, not all tasks have been completed")
 
 var workersNumber int = runtime.NumCPU()
-var jobsQueue chan Tasker
-var doneChan chan struct{}
+
+// Run starts the goroutines that will execute Taskers.
+// It is intended to run blocking in the main goroutine.
+func Run(jobs []Tasker) (err error) {
+	// []T does not convert to []Tasker implicitly even is T implements
+	// Tasker. We need to iterate on []Tasker making an explicit cast.
+	// http://golang.org/doc/faq#convert_slice_of_interface
+	prematureEnd := make(chan struct{})
+	jobsQueue := make(chan Tasker, workersNumber)
+	done := make(chan struct{}, workersNumber)
+	var totalDone int
+	go populateQueue(jobsQueue, jobs, prematureEnd)
+	go parallelizeWorkers(jobsQueue, done)
+	// TODO add a case timeout that returns error.
+	for {
+		select {
+		case <-done:
+			totalDone++
+		case <-prematureEnd:
+			err = ErrTasksNotCompleted
+		}
+		if totalDone == workersNumber {
+			// We can assume that jobsQueue is closed and
+			// that no goroutine is operating on []Tasker.
+			break
+		}
+	}
+	return
+}
 
 func populateQueue(jobsQueue chan<- Tasker, jobs []Tasker, prematureEnd chan<- struct{}) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt)
 	for _, t := range jobs {
 		select {
+		default:
+			jobsQueue <- t
 		case <-signalChan:
 			// Abort jobs queue evaluation.
 			// Taskers already sended will be finished
 			// and an error will be returned.
-			trace.Traceln("parallel: received SIGINT")
+			trace.Println("parallel: received SIGINT")
 			prematureEnd <- struct{}{}
 			close(jobsQueue)
 			return
-		default:
-			jobsQueue <- t
 		}
 	}
-	trace.Traceln("close jobsQueue")
+	trace.Println("close jobsQueue")
 	close(jobsQueue)
 }
 
@@ -72,35 +99,8 @@ func evaluateQueue(jobsQueue <-chan Tasker, doneChan chan<- struct{}) {
 	doneChan <- struct{}{}
 }
 
-// Run starts the goroutines that will execute Taskers.
-// It is intended to run blocking in the main goroutine.
-func Run(jobs []Tasker) (err error) {
-	// []T does not convert to []Tasker implicitly even is T implements
-	// Tasker. We need to iterate on []Tasker making an explicit cast.
-	// http://golang.org/doc/faq#convert_slice_of_interface
-	prematureEnd := make(chan struct{})
-	jobsQueue := make(chan Tasker, workersNumber)
-	doneChan := make(chan struct{}, workersNumber)
-	var totalDone int
-	go populateQueue(jobsQueue, jobs, prematureEnd)
-	go parallelizeWorkers(jobsQueue, doneChan)
-	for {
-		select {
-		// TODO case timeout, returns error.
-		case <-doneChan:
-			totalDone++
-		case <-prematureEnd:
-			err = ErrTasksNotCompleted
-		}
-		if totalDone == workersNumber {
-			// We can assume that jobsQueue is closed and
-			// that no goroutine is operating on []Tasker.
-			break
-		}
-	}
-	return
-}
-
+// runSync is used to compare benchmark of parallelism
+// implemented with channels.
 func runSync(jobs []Tasker) (err error) {
 	var wg sync.WaitGroup
 	for _, j := range jobs {
