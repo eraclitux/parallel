@@ -4,7 +4,7 @@ parallel
 
 |image0|_ |image1|_
 
-.. |image0| image:: https://godoc.org/github.com/eraclitux/parallel?status.png
+.. |image0| image:: https://godoc.org/github.com/eraclitux/parallel?status.svg
 .. _image0: https://godoc.org/github.com/eraclitux/parallel
 
 .. |image1| image:: https://travis-ci.org/eraclitux/parallel.svg?branch=master
